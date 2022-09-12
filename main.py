@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.optimizers.experimental import AdamW
+from tensorflow_addons.optimizers import AdamW
 from tensorflow import keras
 import config
 from utils import linear_beta_schedule, cosine_beta_schedule
