@@ -1,9 +1,10 @@
-import tensorflow as tf
-import numpy as np
 import os
+
+import config
+import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-import config
 
 
 def ResidualBlock(width):
@@ -55,7 +56,7 @@ class PositionalEmbedding(tf.keras.layers.Layer):
 
     def __call__(self, position, *args, **kwargs):
         half_dim = tf.cast(self.dim // 2, tf.float32)
-        embeddings = tf.math.log(10000.) / (half_dim - 1)
+        embeddings = tf.math.log(10000.0) / (half_dim - 1)
         embeddings = tf.exp(tf.range(half_dim) * -embeddings)
         embeddings = position[:, None] * embeddings[None, :]
         embeddings = tf.concat([tf.sin(embeddings), tf.cos(embeddings)], axis=-1)
@@ -70,6 +71,7 @@ class PositionalEmbedding(tf.keras.layers.Layer):
 # take an image before passing it to the UNet add positional embeddings to it
 # use the PositionalEmbeddings class
 # the embedded out => (embed_dim, embed_dim) is passed on to the UNet
+
 
 class UNet(tf.keras.Model):
     def __init__(self, dim, num_channels, num_channels_per_layer, block_depth):
@@ -90,12 +92,16 @@ class UNet(tf.keras.Model):
         for _ in range(block_depth):
             self.bottle_necks.append(ResidualBlock(self.widths[-1]))
 
-        self.time_mlp = tf.keras.Sequential([
-            PositionalEmbedding(self.dim),
-            layers.UpSampling2D(size=config.IMAGE_SIZE, interpolation="nearest")
-        ])
+        self.time_mlp = tf.keras.Sequential(
+            [
+                PositionalEmbedding(self.dim),
+                layers.UpSampling2D(size=config.IMAGE_SIZE, interpolation="nearest"),
+            ]
+        )
         self.input_conv = layers.Conv2D(self.widths[0], kernel_size=1)
-        self.last_layer = tf.keras.layers.Conv2D(self.num_channels, kernel_size=1, kernel_initializer="zeros")
+        self.last_layer = tf.keras.layers.Conv2D(
+            self.num_channels, kernel_size=1, kernel_initializer="zeros"
+        )
 
     def model(self):
         ims = tf.keras.Input(shape=(64, 64, 3))
@@ -131,8 +137,3 @@ if __name__ == "__main__":
     print(len(model.upsample_blocks), len(model.downsample_blocks))
     out = model([tf.keras.Input(shape=(64, 64, 3)), tf.keras.Input(shape=(1, 1))])
     print(model.model().summary())
-
-
-
-
-

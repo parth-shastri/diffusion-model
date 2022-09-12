@@ -1,19 +1,18 @@
 # The code for all the util functions required for training and sampling from the
 # diffusion model
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
-from PIL import Image
-
 import config
+import numpy as np
+import tensorflow as tf
+from PIL import Image
+from tensorflow import keras
 
 
 def get_alphas(betas):
-    alphas = 1. - betas
+    alphas = 1.0 - betas
     alphas_cum = tf.math.cumprod(alphas, axis=0)
     alphas_cum_prev = tf.pad(alphas_cum[:-1], [[1, 0]], constant_values=1.0)
     alphas_sqrt = tf.sqrt(alphas_cum)
-    sqrt_one_minus_alphas_cum = tf.sqrt(1. - alphas_cum)
+    sqrt_one_minus_alphas_cum = tf.sqrt(1.0 - alphas_cum)
     return alphas_sqrt, sqrt_one_minus_alphas_cum, alphas_cum_prev
 
 
@@ -45,10 +44,15 @@ def inference_samples(model, num_images):
         else:
             z = tf.zeros_like(x_t)
         beta_ = extract(betas_, t)
-        sqrt_a_t, sqrt_one_minus_a_t = extract(sqrt_a_, t), extract(sqrt_one_minus_a_, t)
+        sqrt_a_t, sqrt_one_minus_a_t = extract(sqrt_a_, t), extract(
+            sqrt_one_minus_a_, t
+        )
         x_t_minus_one = (1.0 / sqrt_a_t) * (
-                x_t - (sqrt_one_minus_a_t ** 2) * model(
-            [x_t, tf.fill((x_t.shape[0], 1, 1), tf.cast(t, tf.float32))]) / sqrt_one_minus_a_t)
+            x_t
+            - (sqrt_one_minus_a_t**2)
+            * model([x_t, tf.fill((x_t.shape[0], 1, 1), tf.cast(t, tf.float32))])
+            / sqrt_one_minus_a_t
+        )
         x_t_minus_one += beta_ * z
         x_t = x_t_minus_one
 

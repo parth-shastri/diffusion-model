@@ -1,8 +1,8 @@
-import tensorflow as tf
-from tensorflow_datasets import load
 import config
-from PIL import Image
 import numpy as np
+import tensorflow as tf
+from PIL import Image
+from tensorflow_datasets import load
 
 
 def preprocess_data(data):
@@ -14,10 +14,12 @@ def preprocess_data(data):
         (height - crop_size) // 2,
         (width - crop_size) // 2,
         crop_size,
-        crop_size
+        crop_size,
     )
 
-    image = tf.image.resize(image, [config.IMAGE_SIZE, config.IMAGE_SIZE], antialias=True)
+    image = tf.image.resize(
+        image, [config.IMAGE_SIZE, config.IMAGE_SIZE], antialias=True
+    )
     return tf.clip_by_value(image / 255.0, 0.0, 1.0)
 
 
