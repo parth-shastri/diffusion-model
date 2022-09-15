@@ -27,12 +27,12 @@ def train_fn(dataset, model, betas, optimizer, metric):
     # return the losses after
     loss_arr = []
     for img_batch in tqdm(dataset, total=len(dataset)):
+        t_batch = tf.random.uniform((img_batch.shape[0], 1, 1), 1, config.TIME_STEPS)
+        noise = tf.random.normal(img_batch.shape)
+        noisy_image_batch = corrupt_image(
+            img_batch, tf.expand_dims(t_batch, axis=-1), betas, noise=noise
+        )
         with tf.GradientTape() as tape:
-            t_batch = tf.random.uniform((img_batch.shape[0], 1, 1), 1, config.TIME_STEPS)
-            noise = tf.random.normal(img_batch.shape)
-            noisy_image_batch = corrupt_image(
-                img_batch, tf.expand_dims(t_batch, axis=-1), betas, noise=noise
-            )
             noise_pred = model([noisy_image_batch, t_batch])
             step_loss = loss_fn(noise, noise_pred, loss_type="l1")
             loss_arr.append(step_loss)

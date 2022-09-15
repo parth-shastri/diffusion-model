@@ -19,7 +19,7 @@ def main():
         block_depth=config.BLOCK_DEPTH,
     )
 
-    optimizer = AdamW(config.LR, config.DECAY)
+    optimizer = AdamW(config.DECAY, config.LR)
 
     if config.BETA_SCHEDULE == "linear":
         betas = linear_beta_schedule(config.TIME_STEPS)
@@ -40,7 +40,7 @@ def main():
 
     for epoch in range(config.NUM_EPOCHS):
         print("Training Epoch: {}".format(epoch + 1))
-        train_fn(train_dataset, model, betas, optimizer, loss_metric)
+        train_fn(train_dataset.take(2), model, betas, optimizer, loss_metric)
         print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
         if (epoch+1) % 2 == 0:
             print("Evaluating...")
