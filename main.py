@@ -41,8 +41,8 @@ def main():
     for epoch in range(config.NUM_EPOCHS):
         print("Training Epoch: {}".format(epoch + 1))
         loss = train_fn(train_dataset, model, betas, optimizer, loss_metric)
-        print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss))
-        if epoch % 2 == 0:
+        print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
+        if (epoch+1) % 2 == 0:
             print("Evaluating...")
             start = time.perf_counter()
             imgs = eval_fn(num_images=4, model=model)
@@ -62,6 +62,8 @@ def main():
             tf.summary.scalar("loss", loss_metric.result(), step=epoch)
 
         loss_metric.reset_states()
+
+    model.save("diffusion_model_epochs_10_oxford_data")
 
 
 if __name__ == "__main__":
