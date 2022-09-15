@@ -40,9 +40,9 @@ def main():
 
     for epoch in range(config.NUM_EPOCHS):
         print("Training Epoch: {}".format(epoch + 1))
-        loss = train_fn(train_dataset, model, betas, optimizer, loss_metric)
-        print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss))
-        if epoch % 2 == 0:
+        loss = train_fn(train_dataset.take(2), model, betas, optimizer, loss_metric)
+        print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
+        if (epoch+1) % 2 == 0:
             print("Evaluating...")
             start = time.perf_counter()
             imgs = eval_fn(num_images=4, model=model)
