@@ -28,7 +28,7 @@ def train_fn(dataset, model, betas, optimizer, metric):
     loss_arr = []
     for img_batch in tqdm(dataset, total=len(dataset)):
         with tf.GradientTape() as tape:
-            t_batch = tf.random.uniform((config.BATCH_SIZE, 1, 1), 1, config.TIME_STEPS)
+            t_batch = tf.random.uniform((img_batch.shape[0], 1, 1), 1, config.TIME_STEPS)
             noise = tf.random.normal(img_batch.shape)
             noisy_image_batch = corrupt_image(
                 img_batch, tf.expand_dims(t_batch, axis=-1), betas, noise=noise
