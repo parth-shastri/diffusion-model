@@ -42,8 +42,6 @@ def train_fn(dataset, model, betas, optimizer, metric):
 
         metric(step_loss)
 
-    return sum(loss_arr) / len(loss_arr)
-
 
 def eval_fn(num_images, model):
     return inference_samples(model, num_images)
