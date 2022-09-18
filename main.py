@@ -1,6 +1,5 @@
 import datetime
 import time
-
 import config
 import tensorflow as tf
 from dataloader import train_dataset, val_dataset
@@ -9,6 +8,7 @@ from model import UNet
 from tensorflow import keras
 from tensorflow_addons.optimizers import AdamW
 from utils import cosine_beta_schedule, linear_beta_schedule
+from tensorflow.keras.utils import Progbar
 
 
 def main():
@@ -40,8 +40,15 @@ def main():
 
     for epoch in range(config.NUM_EPOCHS):
         print("Training Epoch: {}".format(epoch + 1))
-        train_fn(train_dataset, model, betas, optimizer, loss_metric)
-        print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
+        # keras progress bar
+        pb = Progbar(len(train_dataset) * config.BATCH_SIZE, stateful_metrics=["train_loss"])
+        for idx, img_batch in enumerate(train_dataset):
+            # train for one step
+            loss_of_step = train_fn(img_batch, model, betas, optimizer)
+            loss_metric.update_state(loss_of_step)
+            pb.update(idx * config.BATCH_SIZE, values=[("train_loss", loss_metric.result())])
+
+        # print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
         if (epoch+1) % 2 == 0:
             print("Evaluating...")
             start = time.perf_counter()

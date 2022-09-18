@@ -3,7 +3,7 @@ import config
 import tensorflow as tf
 from model import UNet
 from tensorflow import keras
-from tqdm import tqdm
+# from tqdm import tqdm
 from utils import corrupt_image, get_alphas, inference_samples, linear_beta_schedule
 
 
@@ -22,27 +22,27 @@ def loss_fn(noise, noise_pred, loss_type="l1"):
     return loss
 
 
-def train_fn(dataset, model, betas, optimizer, metric):
+@tf.function
+def train_fn(img_batch, model, betas, optimizer):
     # train the model for one pass of the dataset
     # return the losses after
-    loss_arr = []
-    for img_batch in tqdm(dataset, total=len(dataset)):
-        t_batch = tf.random.uniform((img_batch.shape[0], 1, 1), 1, config.TIME_STEPS)
-        noise = tf.random.normal(img_batch.shape)
-        noisy_image_batch = corrupt_image(
-            img_batch, tf.expand_dims(t_batch, axis=-1), betas, noise=noise
-        )
-        with tf.GradientTape() as tape:
-            noise_pred = model([noisy_image_batch, t_batch])
-            step_loss = loss_fn(noise, noise_pred, loss_type="l1")
-            loss_arr.append(step_loss)
+    # batch_shape = tf.gather(img_batch.shape, 0)
+    t_batch = tf.random.uniform((config.BATCH_SIZE, 1, 1), 1, config.TIME_STEPS)
+    noise = tf.random.normal((config.BATCH_SIZE, config.IMAGE_SIZE, config.IMAGE_SIZE, 3))
+    noisy_image_batch = corrupt_image(
+        img_batch, tf.expand_dims(t_batch, axis=-1), betas, noise=noise
+    )
+    with tf.GradientTape() as tape:
+        noise_pred = model([noisy_image_batch, t_batch])
+        step_loss = loss_fn(noise, noise_pred, loss_type="l1")
 
-        gradients = tape.gradient(step_loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    gradients = tape.gradient(step_loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        metric(step_loss)
+    return step_loss
 
 
+@tf.function
 def eval_fn(num_images, model):
     return inference_samples(model, num_images)
 

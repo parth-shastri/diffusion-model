@@ -1,60 +1,84 @@
 import os
-
 import config
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Layer
 
 
-def ResidualBlock(width):
-    def apply(x):
-        input_width = x.shape[3]
-        if input_width == width:
-            residual = x
-        else:
-            residual = tf.keras.layers.Conv2D(width, kernel_size=1)(x)
-        x = tf.keras.layers.BatchNormalization(center=False, scale=False)(x)
-        x = tf.keras.layers.Conv2D(
+class ResidualBlock(Model):
+    def get_config(self):
+        pass
+
+    def __init__(self, width, **kwargs):
+        super(ResidualBlock, self).__init__(**kwargs)
+        self.width = width
+        self.res = tf.keras.layers.Conv2D(width, kernel_size=1)
+        self.bn = tf.keras.layers.BatchNormalization(center=False, scale=False)
+        self.conv1 = tf.keras.layers.Conv2D(
             width, kernel_size=3, padding="same", activation=keras.activations.swish
-        )(x)
-        x = tf.keras.layers.Conv2D(width, kernel_size=3, padding="same")(x)
+        )
+        self.conv2 = tf.keras.layers.Conv2D(width, kernel_size=3, padding="same")
+
+    def call(self, inputs, *args, **kwargs):
+        input_width = inputs.shape[3]
+
+        if input_width == self.width:
+            residual = inputs
+        else:
+            residual = self.res(inputs)
+
+        x = self.bn(inputs)
+        x = self.conv1(x)
+        x = self.conv2(x)
         x = tf.keras.layers.Add()([x, residual])
         return x
 
-    return apply
 
-
-def DownBlock(width, block_depth):
-    def apply(x):
-        x, skips = x
+class DownBlock(Layer):
+    def __init__(self, width, block_depth, **kwargs):
+        super(DownBlock, self).__init__(**kwargs)
+        self.block_depth = block_depth
+        self.res_blocks = []
         for _ in range(block_depth):
-            x = ResidualBlock(width)(x)
-            skips.append(x)
-        x = tf.keras.layers.AveragePooling2D(pool_size=2)(x)
+            self.res_blocks.append(ResidualBlock(width))
+        self.pool = tf.keras.layers.AveragePooling2D(pool_size=2)
+
+    def call(self, inputs, *args, **kwargs):
+        x = inputs
+        for res_block in self.res_blocks:
+            x = res_block(x)
+        skip = x
+        x = self.pool(x)
+        return x, skip
+
+
+class UpBlock(Layer):
+    def __init__(self, width, block_depth, **kwargs):
+        super(UpBlock, self).__init__(**kwargs)
+        self.block_depth = block_depth
+        self.res_blocks = []
+        for _ in range(block_depth):
+            self.res_blocks.append(ResidualBlock(width))
+        self.up = tf.keras.layers.UpSampling2D(size=2, interpolation="bilinear")
+
+    def call(self, inputs, *args, **kwargs):
+        x, skip = inputs
+        x = self.up(x)
+        x = tf.keras.layers.Concatenate()([x, skip])
+        for res_block in self.res_blocks:
+            x = res_block(x)
         return x
 
-    return apply
 
-
-def UpBlock(width, block_depth):
-    def apply(x):
-        x, skips = x
-        x = tf.keras.layers.UpSampling2D(size=2, interpolation="bilinear")(x)
-        for _ in range(block_depth):
-            x = tf.keras.layers.Concatenate()([x, skips.pop()])
-            x = ResidualBlock(width)(x)
-        return x
-
-    return apply
-
-
-class PositionalEmbedding(tf.keras.layers.Layer):
+class PositionalEmbedding(Layer):
     def __init__(self, dim):
-        super(PositionalEmbedding, self).__init__()
+        super().__init__()
         self.dim = dim
 
-    def __call__(self, position, *args, **kwargs):
+    def call(self, position, *args, **kwargs):
         half_dim = tf.cast(self.dim // 2, tf.float32)
         embeddings = tf.math.log(10000.0) / (half_dim - 1)
         embeddings = tf.exp(tf.range(half_dim) * -embeddings)
@@ -72,25 +96,27 @@ class PositionalEmbedding(tf.keras.layers.Layer):
 # use the PositionalEmbeddings class
 # the embedded out => (embed_dim, embed_dim) is passed on to the UNet
 
+class UNet(Model):
+    def get_config(self):
+        pass
 
-class UNet(tf.keras.Model):
     def __init__(self, dim, num_channels, num_channels_per_layer, block_depth):
-        super(UNet, self).__init__()
+        super().__init__()
         self.dim = dim
         self.widths = num_channels_per_layer
         self.num_channels = num_channels
-
+        self.skips = []
         self.downsample_blocks = []
         for width in self.widths[:-1]:
-            self.downsample_blocks.append(DownBlock(width, block_depth))
+            self.downsample_blocks.append(DownBlock(width, block_depth, name=f"down_block_{width}"))
 
         self.upsample_blocks = []
         for width in reversed(self.widths[:-1]):
-            self.upsample_blocks.append(UpBlock(width, block_depth))
+            self.upsample_blocks.append(UpBlock(width, block_depth, name=f"up_block_{width}"))
 
         self.bottle_necks = []
-        for _ in range(block_depth):
-            self.bottle_necks.append(ResidualBlock(self.widths[-1]))
+        for i in range(block_depth):
+            self.bottle_necks.append(ResidualBlock(self.widths[-1], name=f"bottle_neck_{i}"))
 
         self.time_mlp = tf.keras.Sequential(
             [
@@ -98,42 +124,44 @@ class UNet(tf.keras.Model):
                 layers.UpSampling2D(size=config.IMAGE_SIZE, interpolation="nearest"),
             ]
         )
-        self.input_conv = layers.Conv2D(self.widths[0], kernel_size=1)
+        self.concat = layers.Concatenate(name="mlp_concat")
+        self.input_conv = layers.Conv2D(self.widths[0], kernel_size=1, name="input_conv")
         self.last_layer = tf.keras.layers.Conv2D(
-            self.num_channels, kernel_size=1, kernel_initializer="zeros"
+            self.num_channels, kernel_size=1, kernel_initializer="zeros", name="out_conv"
         )
 
-    def model(self):
-        ims = tf.keras.Input(shape=(64, 64, 3))
-        t = tf.keras.Input(shape=(1, 1))
-        out = self([ims, t])
-        return tf.keras.Model(inputs=[ims, t], outputs=out)
+    def summary(self, line_length=None, positions=None, print_fn=None):
+        ins = (tf.keras.Input(shape=(64, 64, 3)), tf.keras.Input(shape=(1, 1)))
+        model = Model(inputs=ins, outputs=self.call(ins))
+        return model.summary()
 
-    def __call__(self, inputs, *args, **kwargs):
-        skips = []
-        x, time = inputs
+    def call(self, inputs, training=None, mask=None):
+        ins, time = inputs
         e = self.time_mlp(time)
-        x = self.input_conv(x)
-        x = layers.Concatenate()([x, e])
+        x = self.input_conv(ins)
+        x = self.concat([x, e])
 
         for layer in self.downsample_blocks:
-            x = layer([x, skips])
-
-        # skips = reversed(skips[:-1])
+            x, skip = layer(x)
+            self.skips.append(skip)
 
         for bottle_neck in self.bottle_necks:
             x = bottle_neck(x)
 
-        for layer in self.upsample_blocks:
-            x = layer([x, skips])
+        rev_skips = reversed(self.skips)
+        for skip, layer in zip(rev_skips, self.upsample_blocks):
+            x = layer([x, skip])
             # x = tf.keras.layers.Concatenate()([x, skip])
 
-        x = self.last_layer(x)
-        return x
+        out = self.last_layer(x)
+        return out
 
 
 if __name__ == "__main__":
     model = UNet(config.EMBEDDING_DIM, 3, config.WIDTHS, config.BLOCK_DEPTH)
-    print(len(model.upsample_blocks), len(model.downsample_blocks))
-    out = model([tf.keras.Input(shape=(64, 64, 3)), tf.keras.Input(shape=(1, 1))])
-    print(model.model().summary())
+    # print(len(model.upsample_blocks), len(model.downsample_blocks))
+    # model.build(input_shape=[(None, 64, 64, 3), (None, 1, 1)])
+    # out = model.call([tf.keras.Input(shape=(64, 64, 3)), tf.keras.Input(shape=(1, 1))])
+    print(model.summary())
+    print(len(model.trainable_variables))
+

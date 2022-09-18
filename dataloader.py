@@ -20,7 +20,10 @@ def preprocess_data(data):
     image = tf.image.resize(
         image, [config.IMAGE_SIZE, config.IMAGE_SIZE], antialias=True
     )
-    return tf.clip_by_value(image / 255.0, 0.0, 1.0)
+    # normalize the image
+    image /= 255.0
+    # image = -1 + (2 * image)
+    return tf.clip_by_value(image, 0.0, 1.0)
 
 
 def get_dataset(split):
@@ -28,10 +31,11 @@ def get_dataset(split):
     return (
         load(config.DATA_NAME, split=split, shuffle_files=True)
         .map(preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
+        # .take(12)
         .cache()
         .repeat(config.DATA_REPETITIONS)
         .shuffle(10 * config.BATCH_SIZE)
-        .batch(config.BATCH_SIZE)
+        .batch(config.BATCH_SIZE, drop_remainder=True)
         .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
 
@@ -43,6 +47,7 @@ if __name__ == "__main__":
     for data in train_dataset:
         print(data.shape)
         # print(data.numpy)
+        data = (data[0] + 1) / 2
         data = data[0].numpy() * 255.0
         img = Image.fromarray(data.astype(np.uint8))
         img.show()
