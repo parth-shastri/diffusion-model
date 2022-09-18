@@ -18,7 +18,7 @@ def main():
         num_channels_per_layer=config.WIDTHS,
         block_depth=config.BLOCK_DEPTH,
     )
-
+    # model.build(input_shape=[(None, config.IMAGE_SIZE, config.IMAGE_SIZE, 3), (None, 1, 1)])
     optimizer = AdamW(config.DECAY, config.LR)
 
     if config.BETA_SCHEDULE == "linear":
@@ -46,7 +46,7 @@ def main():
             # train for one step
             loss_of_step = train_fn(img_batch, model, betas, optimizer)
             loss_metric.update_state(loss_of_step)
-            pb.update(idx * config.BATCH_SIZE, values=[("train_loss", loss_metric.result())])
+            pb.update((idx+1) * config.BATCH_SIZE, values=[("train_loss", loss_metric.result())])
 
         # print("Loss for Epoch {}: {:.2}".format(epoch + 1, loss_metric.result()))
         if (epoch+1) % 2 == 0:
@@ -70,7 +70,7 @@ def main():
 
         loss_metric.reset_states()
 
-    model.save("diffusion_model_epochs_10_oxford_data")
+    model.save("models/diffusion_model_epochs_10_oxford_data")
 
 
 if __name__ == "__main__":

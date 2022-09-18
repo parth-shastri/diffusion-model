@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Layer
 
 class ResidualBlock(Model):
     def get_config(self):
-        pass
+        return {"width": self.width}
 
     def __init__(self, width, **kwargs):
         super(ResidualBlock, self).__init__(**kwargs)
@@ -40,10 +40,11 @@ class ResidualBlock(Model):
 class DownBlock(Layer):
     def __init__(self, width, block_depth, **kwargs):
         super(DownBlock, self).__init__(**kwargs)
+        self.width = width
         self.block_depth = block_depth
         self.res_blocks = []
         for _ in range(block_depth):
-            self.res_blocks.append(ResidualBlock(width))
+            self.res_blocks.append(ResidualBlock(self.width))
         self.pool = tf.keras.layers.AveragePooling2D(pool_size=2)
 
     def call(self, inputs, *args, **kwargs):
@@ -54,14 +55,18 @@ class DownBlock(Layer):
         x = self.pool(x)
         return x, skip
 
+    def get_config(self):
+        return {"width": self.width, "block_depth": self.block_depth}
+
 
 class UpBlock(Layer):
     def __init__(self, width, block_depth, **kwargs):
         super(UpBlock, self).__init__(**kwargs)
+        self.width = width
         self.block_depth = block_depth
         self.res_blocks = []
         for _ in range(block_depth):
-            self.res_blocks.append(ResidualBlock(width))
+            self.res_blocks.append(ResidualBlock(self.width))
         self.up = tf.keras.layers.UpSampling2D(size=2, interpolation="bilinear")
 
     def call(self, inputs, *args, **kwargs):
@@ -71,6 +76,9 @@ class UpBlock(Layer):
         for res_block in self.res_blocks:
             x = res_block(x)
         return x
+
+    def get_config(self):
+        return {"width": self.width, "block_depth": self.block_depth}
 
 
 class PositionalEmbedding(Layer):
@@ -86,6 +94,9 @@ class PositionalEmbedding(Layer):
         embeddings = tf.concat([tf.sin(embeddings), tf.cos(embeddings)], axis=-1)
         return embeddings
 
+    def get_config(self):
+        return {"dim": self.dim}
+
 
 # generate upsample block and downsample block
 # Make a UNet class and init these blocks into layer lists
@@ -97,14 +108,12 @@ class PositionalEmbedding(Layer):
 # the embedded out => (embed_dim, embed_dim) is passed on to the UNet
 
 class UNet(Model):
-    def get_config(self):
-        pass
-
     def __init__(self, dim, num_channels, num_channels_per_layer, block_depth):
         super().__init__()
         self.dim = dim
         self.widths = num_channels_per_layer
         self.num_channels = num_channels
+        self.block_depth = block_depth
         self.skips = []
         self.downsample_blocks = []
         for width in self.widths[:-1]:
@@ -155,6 +164,14 @@ class UNet(Model):
 
         out = self.last_layer(x)
         return out
+
+    def get_config(self):
+        return {
+            "dim": self.dim,
+            "num_channels": self.num_channels,
+            "num_channels_per_layer": self.widths,
+            "self.block_depth": self.block_depth
+        }
 
 
 if __name__ == "__main__":
