@@ -70,7 +70,7 @@ def main():
 
         loss_metric.reset_states()
 
-    model.save("models/diffusion_model_epochs_10_oxford_data")
+    model.save("models/diffusion_model_epochs_10_oxford_data", save_traces=True)
 
 
 if __name__ == "__main__":

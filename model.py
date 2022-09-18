@@ -10,7 +10,9 @@ from tensorflow.keras.layers import Layer
 
 class ResidualBlock(Model):
     def get_config(self):
-        return {"width": self.width}
+        config = super(ResidualBlock, self).get_config()
+        config.update({"width": self.width})
+        return config
 
     def __init__(self, width, **kwargs):
         super(ResidualBlock, self).__init__(**kwargs)
@@ -56,7 +58,9 @@ class DownBlock(Layer):
         return x, skip
 
     def get_config(self):
-        return {"width": self.width, "block_depth": self.block_depth}
+        config = super(DownBlock, self).get_config()
+        config.update({"width": self.width, "block_depth": self.block_depth})
+        return config
 
 
 class UpBlock(Layer):
@@ -78,7 +82,9 @@ class UpBlock(Layer):
         return x
 
     def get_config(self):
-        return {"width": self.width, "block_depth": self.block_depth}
+        config = super(UpBlock, self).get_config()
+        config.update({"width": self.width, "block_depth": self.block_depth})
+        return config
 
 
 class PositionalEmbedding(Layer):
@@ -95,7 +101,9 @@ class PositionalEmbedding(Layer):
         return embeddings
 
     def get_config(self):
-        return {"dim": self.dim}
+        config = super(PositionalEmbedding, self).get_config()
+        config.update({"dim": self.dim})
+        return config
 
 
 # generate upsample block and downsample block
