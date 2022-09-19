@@ -18,6 +18,7 @@ def main():
         num_channels_per_layer=config.WIDTHS,
         block_depth=config.BLOCK_DEPTH,
     )
+    model = model.model()
     # model.build(input_shape=[(None, config.IMAGE_SIZE, config.IMAGE_SIZE, 3), (None, 1, 1)])
     optimizer = AdamW(config.DECAY, config.LR)
 

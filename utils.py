@@ -42,7 +42,8 @@ def inference_samples(model, num_images):
         if t > 1:
             z = tf.random.normal(x_t.shape)
         else:
-            z = tf.zeros_like(x_t)
+            z = tf.zeros(x_t.shape)
+
         beta_ = extract(betas_, t)
         sqrt_a_t, sqrt_one_minus_a_t = extract(sqrt_a_, t), extract(
             sqrt_one_minus_a_, t

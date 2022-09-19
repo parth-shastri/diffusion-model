@@ -147,9 +147,13 @@ class UNet(Model):
             self.num_channels, kernel_size=1, kernel_initializer="zeros", name="out_conv"
         )
 
-    def summary(self, line_length=None, positions=None, print_fn=None):
+    def model(self):
         ins = (tf.keras.Input(shape=(64, 64, 3)), tf.keras.Input(shape=(1, 1)))
         model = Model(inputs=ins, outputs=self.call(ins))
+        return model
+
+    def summary(self, line_length=None, positions=None, print_fn=None):
+        model = self.model()
         return model.summary()
 
     def call(self, inputs, training=None, mask=None):

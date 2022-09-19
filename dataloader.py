@@ -32,7 +32,7 @@ def get_dataset(split):
     return (
         load(config.DATA_NAME, split=split, shuffle_files=True)
         .map(preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        # .take(4)
+        .take(4)
         .cache()
         .repeat(config.DATA_REPETITIONS)
         .shuffle(10 * config.BATCH_SIZE)
