@@ -36,8 +36,8 @@ def train_fn(img_batch, model, betas, optimizer):
         noise_pred = model([noisy_image_batch, t_batch])
         step_loss = loss_fn(noise, noise_pred, loss_type="l1")
 
-    gradients = tape.gradient(step_loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    gradients = tape.gradient(step_loss, model.trainable_weights)
+    optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
     return step_loss
 
