@@ -20,7 +20,7 @@ def main():
     )
     model = model.model()
     # model.build(input_shape=[(None, config.IMAGE_SIZE, config.IMAGE_SIZE, 3), (None, 1, 1)])
-    optimizer = AdamW(config.DECAY, config.LR)
+    optimizer = AdamW(weight_decay=config.DECAY, learning_rate=config.LR)
 
     if config.BETA_SCHEDULE == "linear":
         betas = linear_beta_schedule(config.TIME_STEPS)
