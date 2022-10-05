@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 from tensorflow import keras
+import matplotlib.pyplot as plt
+import requests
 
 
 def get_alphas(betas):
@@ -82,16 +84,28 @@ def linear_beta_schedule(timesteps):
 
 
 if __name__ == "__main__":
-    img = Image.open("data/astronaut.jpg").convert("RGB")
+    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    img = Image.open(requests.get(url, stream=True).raw)
     img = np.asarray(img, dtype=np.float32) / 255.0
-    print(img)
+    img = 2 * img - 1
+    print(np.min(img), np.max(img))
     betas = linear_beta_schedule(200)
-    print(betas)
+    # print(betas)
     # print(betas.dtype)
     a_t_, one_minus_a_t_, a_t_minus_one = get_alphas(betas)
     # print(a_t_.dtype)
-    img_ = corrupt_image(img, 199, betas)
-    img_ = np.clip(img_, 0, 1)
-    img_ *= 255.0
-    pil_img_ = Image.fromarray(np.array(img_, dtype=np.uint8))
-    pil_img_.show()
+    # fig, axs = plt.subplots(1, 5, tight_layout=True)
+    for i, t_step in enumerate([0, 50, 100, 150, 199]):
+        img_ = corrupt_image(img, t_step, betas)
+        # img_ = np.clip(img_, -1, 1)
+        img_ = (img_ + 1) / 2
+        img_ *= 255.0
+        img_ = img_.numpy().astype(np.uint8)
+        plt.imshow(img_)
+        plt.show()
+        # axs[i].axis("off")
+        # axs[i].imshow(img_)
+    # fig.show()
+
+    # pil_img_ = Image.fromarray(np.array(img_, dtype=np.uint8))
+    # pil_img_.show()

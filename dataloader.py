@@ -24,7 +24,7 @@ def preprocess_data(data):
     # normalize the image
     image /= 255.0
     image = -1. + (2. * image)
-    return tf.clip_by_value(image, -1.0, 1.0)
+    return image
 
 
 def get_dataset(split):
