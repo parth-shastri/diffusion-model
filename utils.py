@@ -86,6 +86,7 @@ def linear_beta_schedule(timesteps):
 if __name__ == "__main__":
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     img = Image.open(requests.get(url, stream=True).raw)
+    img = img.resize((128, 128))
     img = np.asarray(img, dtype=np.float32) / 255.0
     img = 2 * img - 1
     print(np.min(img), np.max(img))

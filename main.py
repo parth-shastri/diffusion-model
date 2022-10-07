@@ -9,6 +9,8 @@ from tensorflow import keras
 from tensorflow_addons.optimizers import AdamW
 from utils import cosine_beta_schedule, linear_beta_schedule
 from tensorflow.keras.utils import Progbar
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def main():
@@ -44,7 +46,7 @@ def main():
         # keras progress bar
         pb = Progbar(len(train_dataset) * config.BATCH_SIZE, stateful_metrics=["train_loss"])
         for idx, img_batch in enumerate(train_dataset):
-            # train for one step
+            # test for one step
             loss_of_step = train_fn(img_batch, model, betas, optimizer)
             loss_metric.update_state(loss_of_step)
             pb.update((idx+1) * config.BATCH_SIZE, values=[("train_loss", loss_metric.result())])
@@ -55,6 +57,10 @@ def main():
             start = time.perf_counter()
             imgs = eval_fn(num_images=4, model=model)
             end = time.perf_counter()
+            imgs = (imgs + 1) / 2
+            imgs *= 255
+            # plt.imshow(imgs[0].numpy().astype(np.uint8))
+            # plt.show()
             print(f"Time taken: {end - start}")
 
             with eval_summary_writer.as_default():

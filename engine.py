@@ -1,4 +1,4 @@
-# the train and eval scripts along with the loss
+# the test and eval scripts along with the loss
 import config
 import tensorflow as tf
 from model import UNet
@@ -24,7 +24,7 @@ def loss_fn(noise, noise_pred, loss_type="l1"):
 
 @tf.function
 def train_fn(img_batch, model, betas, optimizer):
-    # train the model for one pass of the dataset
+    # test the model for one pass of the dataset
     # return the losses after
     # batch_shape = tf.gather(img_batch.shape, 0)
     t_batch = tf.random.uniform((config.BATCH_SIZE, 1, 1), 1, config.TIME_STEPS)

@@ -41,8 +41,8 @@ def get_dataset(split):
     )
 
 
-train_dataset = get_dataset("train[:80%]+validation[:80%]+test[:80%]")
-val_dataset = get_dataset("train[:20%]+validation[:20%]+test[:20%]")
+train_dataset = get_dataset("test[:80%]+validation[:80%]+test[:80%]")
+val_dataset = get_dataset("test[:20%]+validation[:20%]+test[:20%]")
 
 if __name__ == "__main__":
     for data in train_dataset:
