@@ -194,3 +194,10 @@ if __name__ == "__main__":
     print(model.summary())
     print(len(model.trainable_variables))
 
+    # ones test
+    ones = tf.ones((1, config.IMAGE_SIZE, config.IMAGE_SIZE, 3))
+    t_ones = tf.ones((1, 1, 1))
+    with tf.device("/CPU:0"):
+        inferred_ones = model((ones, t_ones))
+
+
