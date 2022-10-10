@@ -37,8 +37,8 @@ def inference_samples(model, num_images):
     # take one sample from the learned markov chain
     x_t = tf.random.normal((num_images, config.IMAGE_SIZE, config.IMAGE_SIZE, 3))
     betas = linear_beta_schedule(config.TIME_STEPS)
-    sqrt_a_, sqrt_one_minus_a_, sqrt_a_t_minus_one_, alphas = get_alphas(betas)
-    posterior_betas = (sqrt_a_t_minus_one_ / sqrt_one_minus_a_) * betas
+    sqrt_a_, sqrt_one_minus_a_, a_t_minus_one_, alphas = get_alphas(betas)
+    posterior_betas = (1. - a_t_minus_one_ / sqrt_one_minus_a_**2) * betas
     sqrt_recip_alphas = tf.sqrt(1.0 / alphas)
 
     for t in range(config.TIME_STEPS):

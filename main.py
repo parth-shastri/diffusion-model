@@ -32,7 +32,7 @@ def main():
         raise NotImplementedError(f"{config.BETA_SCHEDULE} not implemented.")
 
     # tensorboard
-    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    current_time = datetime.datetime.now().strftime("%Y/%m/%d-%H:%M:%S")
     train_log_dir = f"models/logs/{current_time}/train"
     eval_log_dir = f"models/logs/{current_time}/test"
     train_summary_writer = tf.summary.create_file_writer(train_log_dir)
@@ -77,7 +77,7 @@ def main():
 
         loss_metric.reset_states()
 
-    model.save("models/diffusion_model_epochs_10_oxford_data", save_traces=True)
+    model.save("models/diffusion_model_epochs_{}_oxford_data".format(config.NUM_EPOCHS), save_traces=True)
 
 
 if __name__ == "__main__":
