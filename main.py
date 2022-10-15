@@ -32,7 +32,7 @@ def main():
         raise NotImplementedError(f"{config.BETA_SCHEDULE} not implemented.")
 
     # tensorboard
-    current_time = datetime.datetime.now().strftime("%Y/%m/%d-%H:%M:%S")
+    current_time = datetime.datetime.now().strftime("%Y_%m_%d-%H~%M~%S")
     train_log_dir = f"models/logs/{current_time}/train"
     eval_log_dir = f"models/logs/{current_time}/test"
     train_summary_writer = tf.summary.create_file_writer(train_log_dir)
@@ -66,7 +66,7 @@ def main():
             with eval_summary_writer.as_default():
                 tf.summary.image(
                     "diffusion training",
-                    imgs,
+                    tf.cast(imgs, tf.uint8),
                     step=epoch,
                     max_outputs=4,
                     description="The images generated after every 2 epochs.",

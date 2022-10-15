@@ -129,3 +129,10 @@ if __name__ == "__main__":
         # normal = tf.random.normal((1, 64, 64, 3))
         # t_ones = tf.ones((1, 1, 1))
         # normal_test = model([normal, t_ones])
+
+    fig, axs = plt.subplots()
+    inf_img = (1 + inferred_img_loaded) / 2
+    inf_img *= 255
+    inf_img = inf_img.numpy()[0].astype(np.uint8)
+    axs.imshow(inf_img)
+    fig.show()

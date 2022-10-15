@@ -1,3 +1,6 @@
-pillow~=9.2.0
-tqdm~=4.64.1
 tensorflow==2.6.4
+tensorflow-addons==0.16.1
+tensorflow-datasets==4.7.0
+Pillow==9.2.0
+matplotlib==3.6.1
+numpy==1.19.5

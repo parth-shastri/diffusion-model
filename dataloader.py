@@ -4,6 +4,8 @@ import tensorflow as tf
 from PIL import Image
 from tensorflow_datasets import load
 import matplotlib.pyplot as plt
+from warnings import filterwarnings
+filterwarnings("ignore")
 
 
 def preprocess_data(data):
@@ -32,7 +34,7 @@ def get_dataset(split):
     return (
         load(config.DATA_NAME, split=split, shuffle_files=True)
         .map(preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        # .take(4)
+        # .take(128)
         .cache()
         .repeat(config.DATA_REPETITIONS)
         .shuffle(10 * config.BATCH_SIZE)
